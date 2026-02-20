@@ -568,6 +568,22 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
         }
+        <div class="share-container">
+          <button class="share-button" aria-label="Share this activity">
+            📤 Share
+          </button>
+          <div class="share-dropdown hidden">
+            <a class="share-option share-whatsapp" href="#" target="_blank" rel="noopener noreferrer">
+              💬 WhatsApp
+            </a>
+            <a class="share-option share-email" href="#" target="_blank" rel="noopener noreferrer">
+              ✉️ Email
+            </a>
+            <button class="share-option share-copy">
+              📋 Copy Link
+            </button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -586,6 +602,50 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    // Add share button functionality
+    const shareButton = activityCard.querySelector(".share-button");
+    const shareDropdown = activityCard.querySelector(".share-dropdown");
+    const shareText = `Check out "${name}" at Mergington High School!\n${details.description}\nSchedule: ${formattedSchedule}`;
+    const shareUrl = window.location.href;
+
+    shareButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (navigator.share) {
+        navigator.share({ title: name, text: shareText, url: shareUrl }).catch((err) => {
+          if (err.name !== "AbortError") {
+            console.error("Share failed:", err);
+          }
+        });
+      } else {
+        // Toggle dropdown for browsers without Web Share API
+        const isHidden = shareDropdown.classList.toggle("hidden");
+        if (!isHidden) {
+          // Close dropdown when clicking elsewhere
+          const closeDropdown = () => { shareDropdown.classList.add("hidden"); };
+          document.addEventListener("click", closeDropdown, { once: true });
+        }
+      }
+    });
+
+    // Populate share links
+    const whatsappLink = activityCard.querySelector(".share-whatsapp");
+    whatsappLink.href = `https://wa.me/?text=${encodeURIComponent(shareText + "\n" + shareUrl)}`;
+
+    const emailLink = activityCard.querySelector(".share-email");
+    emailLink.href = `mailto:?subject=${encodeURIComponent("Join " + name + " at Mergington High School!")}&body=${encodeURIComponent(shareText + "\n\n" + shareUrl)}`;
+
+    const copyButton = activityCard.querySelector(".share-copy");
+    copyButton.addEventListener("click", () => {
+      shareDropdown.classList.add("hidden");
+      navigator.clipboard.writeText(shareText + "\n" + shareUrl).then(() => {
+        copyButton.textContent = "✅ Copied!";
+        setTimeout(() => { copyButton.textContent = "📋 Copy Link"; }, 2000);
+      }).catch(() => {
+        copyButton.textContent = "❌ Copy failed";
+        setTimeout(() => { copyButton.textContent = "📋 Copy Link"; }, 2000);
+      });
+    });
 
     activitiesList.appendChild(activityCard);
   }
